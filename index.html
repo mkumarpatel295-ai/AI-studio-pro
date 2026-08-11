@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Studio Pro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: #050505; color: #fff; height: 100vh; overflow: hidden; display: flex; }
+        #webgl-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
+        #sidebar { position: fixed; left: -260px; top: 0; width: 260px; height: 100%; background: rgba(17, 17, 17, 0.95); backdrop-filter: blur(10px); border-right: 1px solid #333; z-index: 100; transition: 0.3s; padding: 20px; }
+        #sidebar.active { left: 0; }
+        #main-ui { position: relative; z-index: 10; width: 100vw; height: 100vh; display: flex; flex-direction: column; padding: 15px; }
+        
+        .header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+        .menu-btn { background: #6366f1; border: none; color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 1.1rem; }
+        .app-title { font-size: 1.3rem; font-weight: bold; color: #818cf8; }
+
+        .chat-container { flex: 1; overflow-y: auto; padding-bottom: 15px; display: flex; flex-direction: column; gap: 12px; }
+        .msg { padding: 12px 16px; border-radius: 14px; max-width: 80%; line-height: 1.4; font-size: 0.95rem; }
+        .ai { background: rgba(30, 41, 59, 0.9); border: 1px solid #334155; align-self: flex-start; }
+        .user { background: #6366f1; align-self: flex-end; }
+
+        .input-bar { display: flex; gap: 10px; background: #111; padding: 10px 14px; border-radius: 14px; border: 1px solid #333; }
+        input[type="text"] { flex: 1; background: transparent; border: none; color: white; outline: none; font-size: 1rem; }
+        .action-btn { background: #6366f1; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div id="webgl-container"></div>
+
+<div id="sidebar">
+    <h3 style="color:#818cf8; margin-bottom:15px;">📜 Chat History</h3>
+    <div id="historyList" style="display:flex; flex-direction:column; gap:8px;"></div>
+</div>
+
+<div id="main-ui">
+    <div class="header">
+        <button class="menu-btn" onclick="document.getElementById('sidebar').classList.toggle('active')">☰</button>
+        <div class="app-title">AI Studio Pro</div>
+    </div>
+
+    <div class="chat-container" id="chatBox">
+        <div class="msg ai">नमस्ते! मैं AI Studio Pro हूँ। मैं आपकी बात समझ सकता हूँ, हिसाब कर सकता हूँ, जीके बता सकता हूँ और 3D इमेज भी बना सकता हूँ!</div>
+    </div>
+
+    <div class="input-bar">
+        <input type="file" id="fileInput" style="display:none" onchange="uploadFile()">
+        <button class="action-btn" style="background:#334155;" onclick="document.getElementById('fileInput').click()">📁</button>
+        <input type="text" id="userInput" placeholder="Ask Anything..." onkeypress="if(event.key==='Enter') sendMessage()">
+        <button class="action-btn" onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<script>
+    // --- AI Brain (मालिक, सीईओ, सपोर्टर, जीके और मैथ) ---
+    function processQuery(text) {
+        const q = text.toLowerCase().trim();
+
+        // 1. मालिक और क्रिएटर की जानकारी
+        if (q.includes("मालिक") || q.includes("owner") || q.includes("किसने बनाया") || q.includes("banaya") || q.includes("creator")) {
+            return { type: "text", text: "मेरे मालिक और क्रिएटर मनीष कुमार पटेल हैं।" };
+        }
+
+        // 2. सीईओ, सपोर्टर और भाई की जानकारी
+        if (q.includes("ceo") || q.includes("सीईओ") || q.includes("support") || q.includes("सपोर्टर") || q.includes("bhai") || q.includes("भाई")) {
+            return { type: "text", text: "मेरे CEO, मुख्य सपोर्टर और मालिक के भाई नवनीत कुमार पटेल हैं।" };
+        }
+
+        // 3. साधारण बातचीत (Greetings)
+        if (q.includes("hello") || q.includes("hi") || q.includes("हेलो") || q.includes("हाय")) 
+            return { type: "text", text: "नमस्ते! मैं आपकी क्या मदद कर सकता हूँ?" };
+
+        if (q.includes("kaise ho") || q.includes("कैसे हो")) 
+            return { type: "text", text: "मैं बिल्कुल ठीक हूँ! आप बताइए, आपका क्या हाल है?" };
+
+        if (q.includes("naam") || q.includes("नाम") || q.includes("who are you")) 
+            return { type: "text", text: "मेरा नाम AI Studio Pro है। मेरे मालिक मनीष कुमार पटेल और CEO नवनीत कुमार पटेल हैं।" };
+
+        // 4. गणित (Math Calculator)
+        if (/[\d]+[\s]*[\+\-\*\/][\s]*[\d]+/.test(q)) {
+            try {
+                const expr = q.match(/[\d\+\-\*\/\.\s]+/)[0];
+                const result = eval(expr);
+                return { type: "text", text: `गणित का उत्तर है: ${result}` };
+            } catch(e) {}
+        }
+
+        // 5. जनरल नॉलेज (GK)
+        if (q.includes("bihar की राजधानी") || q.includes("बिहार की राजधानी") || q.includes("capital of bihar")) 
+            return { type: "text", text: "बिहार की राजधानी पटना है।" };
+
+        if (q.includes("bharat की राजधानी") || q.includes("भारत की राजधानी") || q.includes("capital of india")) 
+            return { type: "text", text: "भारत की राजधानी नई दिल्ली है।" };
+
+        if (q.includes("bihar") || q.includes("बिहार")) 
+            return { type: "text", text: "बिहार भारत का एक ऐतिहासिक और समृद्ध राज्य है, जिसकी राजधानी पटना है।" };
+
+        if (q.includes("bharat") || q.includes("भारत") || q.includes("india")) 
+            return { type: "text", text: "भारत एक महान और विविध संस्कृति वाला देश है। इसकी राजधानी नई दिल्ली है।" };
+
+        if (q.includes("aabadi") || q.includes("आबादी") || q.includes("population")) 
+            return { type: "text", text: "वर्तमान में दुनिया में सबसे अधिक आबादी वाला देश भारत है।" };
+
+        // 6. इमेज जनरेशन चेक
+        if (q.includes("image") || q.includes("photo") || q.includes("फोटो") || q.includes("इमेज") || q.includes("picture") || q.includes("banao") || q.includes("बनाओ") || q.includes("chahiye")) {
+            let cleanPrompt = q.replace(/(hamko|mujhe|ak|ek|chahiye|ka|ki|ke|image|photo|picture|banao|make|draw|show|de do|दिखाओ|बनाओ|इमेज|फोटो)/g, "").trim();
+            if (!cleanPrompt) cleanPrompt = q;
+            return { type: "image", prompt: cleanPrompt };
+        }
+
+        // 7. डिफ़ॉल्ट उत्तर
+        return { type: "text", text: `आपने पूछा: "${text}"। मैं इसके बारे में सीख रहा हूँ, अभी आप मुझसे सवाल-जवाब कर सकते हैं या कोई भी इमेज बनवा सकते हैं!` };
+    }
+
+    // --- चैट और UI लॉजिक ---
+    function sendMessage() {
+        const input = document.getElementById('userInput');
+        const query = input.value.trim();
+        if(!query) return;
+
+        // यूजर मैसेज दिखाएं
+        addMessage(query, 'user');
+        
+        // हिस्ट्री में डालें
+        const hItem = document.createElement('div');
+        hItem.style.color = '#cbd5e1'; hItem.style.padding = '6px'; hItem.style.borderBottom = '1px solid #333';
+        hItem.innerText = query;
+        document.getElementById('historyList').prepend(hItem);
+
+        input.value = '';
+
+        // AI का रिस्पॉन्स निकालें
+        const result = processQuery(query);
+
+        if (result.type === "text") {
+            setTimeout(() => addMessage(result.text, 'ai'), 200);
+        } else if (result.type === "image") {
+            addMessage(`🎨 "${result.prompt}" की इमेज जनरेट करके 3D मॉडल पर लगाई जा रही है...`, 'ai');
+            
+            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(result.prompt)}?seed=${Math.floor(Math.random()*1000)}`;
+            
+            const loader = new THREE.TextureLoader();
+            loader.load(imageUrl, (texture) => {
+                cube.material = new THREE.MeshBasicMaterial({ map: texture });
+                addMessage(`✅ 3D क्यूब पर ${result.prompt} की इमेज लग गई है!`, 'ai');
+            }, undefined, () => {
+                addMessage("❌ इमेज लोड करने में दिक्कत हुई, कृपया फिर से प्रयास करें।", 'ai');
+            });
+        }
+    }
+
+    function addMessage(text, sender) {
+        const chatBox = document.getElementById('chatBox');
+        const div = document.createElement('div');
+        div.className = `msg ${sender}`;
+        div.innerText = text;
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function uploadFile() {
+        addMessage("📁 फ़ाइल/फोटो सफलतापूर्वक अपलोड हो गई है!", 'ai');
+    }
+
+    // --- 3D Background (Three.js) ---
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById('webgl-container').appendChild(renderer.domElement);
+
+    const geometry = new THREE.BoxGeometry(2, 2, 2);
+    const material = new THREE.MeshStandardMaterial({ color: 0x6366f1, roughness: 0.3 });
+    const cube = new THREE.Mesh(geometry, material);
+    scene.add(cube);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+    dirLight.position.set(5, 5, 5);
+    scene.add(dirLight);
+
+    camera.position.z = 4.5;
+
+    function animate() {
+        requestAnimationFrame(animate);
+        cube.rotation.x += 0.005;
+        cube.rotation.y += 0.008;
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+</script>
+</body>
+</html>
