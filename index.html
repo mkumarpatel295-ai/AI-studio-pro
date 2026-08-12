@@ -257,6 +257,32 @@
       recognition.onerror = () => { micBtn.style.color = '#9ca3af'; };
       recognition.onend = () => { micBtn.style.color = '#9ca3af'; };
     }
+      // --- Google Login Functionality ---
+  const firebaseConfig = {
+    apiKey: "AIzaSyCF4ZLAyXuhCt_qsbmIQJ1uJUW88OYW13o",
+    authDomain: "ai-studio-pro-2b8e2.firebaseapp.com",
+    projectId: "ai-studio-pro-2b8e2",
+    storageBucket: "ai-studio-pro-2b8e2.firebasestorage.app",
+    messagingSenderId: "194545688809",
+    appId: "1:194545688809:web:1784e1af743771ca295078",
+    measurementId: "G-LK0LMCX56P"
+  };
+
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+
+  function signInWithGoogle() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    firebase.auth().signInWithPopup(provider)
+      .then((result) => {
+        alert("Login Successful! Welcome " + result.user.displayName);
+      })
+      .catch((error) => {
+        alert("Login Error: " + error.message);
+      });
+        }
+    
   </script>
 </body>
   </html>
